@@ -4,6 +4,8 @@
 #include <string>
 #include <cstring>
 #include <sys/ioctl.h>
+#include <thread>
+#include <chrono>
 
 const std::string RESET = "\033[0m";
 const std::string BOLD = "\033[1m";
@@ -82,6 +84,30 @@ void visualizeLogarithm(int frame, int width, int height) {
     std::cout << RESET;
 }
 
+void visualizeSpiral(int frame, int width, int height) {
+    std::string colors[] = {RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA};
+    char symbols[] = {'*', '+', '@', '#', '%', '&', '=', '~', '^', 'o'};
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double dx = x - width / 2.0;
+            double dy = (y - height / 2.0) * 2;
+            double dist = sqrt(dx * dx + dy * dy);
+            if (dist < 1) dist = 1;
+            
+            double logDist = log(dist + 1);
+            int pattern = (int)(logDist * 5 + frame * 0.5) % 10;
+            int colorIdx = (int)(logDist * 2 + frame * 0.3) % 6;
+            double angle = atan2(dy, dx);
+            int spiral = (int)((angle + M_PI) * 5 + logDist * 3 + frame * 0.2) % 10;
+            
+            std::cout << colors[colorIdx] << symbols[(pattern + spiral) % 10];
+        }
+        if (y < height - 1) std::cout << RESET << "\n";
+    }
+    std::cout << RESET;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -102,7 +128,7 @@ void runVisualization(void (*vizFunc)(int, int, int)) {
         moveCursorHome();
         vizFunc(frame, width, height);
         std::cout.flush();
-        usleep(80000);
+        std::this_thread::sleep_for(std::chrono::microseconds(16666));
         frame++;
     }
     
@@ -119,6 +145,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizeModulo);
     } else if (arg == "logarithm") {
         runVisualization(visualizeLogarithm);
+    } else if (arg == "spiral") {
+        runVisualization(visualizeSpiral);
     } else {
         return 1;
     }
