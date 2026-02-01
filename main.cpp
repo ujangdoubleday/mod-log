@@ -108,6 +108,33 @@ void visualizeSpiral(int frame, int width, int height) {
     std::cout << RESET;
 }
 
+void visualizeFibonacciModulo(int frame, int width, int height) {
+    long long* fib = new long long[width];
+    fib[0] = 0;
+    fib[1] = 1;
+    
+    for (int i = 2; i < width; i++) {
+        fib[i] = (fib[i-1] + fib[i-2]) % height;
+    }
+    
+    std::string colors[] = {RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA, WHITE};
+    
+    for (int row = height - 1; row >= 0; row--) {
+        for (int i = 0; i < width; i++) {
+            int val = fib[i] % height;
+            if (val == row) {
+                bool highlight = (i == (frame % width));
+                std::cout << (highlight ? BOLD + YELLOW + "◆" : colors[val % 7] + "●") << RESET;
+            } else {
+                std::cout << DIM << "·" << RESET;
+            }
+        }
+        if (row > 0) std::cout << "\n";
+    }
+    std::cout << RESET;
+    delete[] fib;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -147,6 +174,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizeLogarithm);
     } else if (arg == "spiral") {
         runVisualization(visualizeSpiral);
+    } else if (arg == "fibonacci") {
+        runVisualization(visualizeFibonacciModulo);
     } else {
         return 1;
     }
