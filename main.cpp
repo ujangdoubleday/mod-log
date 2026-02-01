@@ -135,6 +135,38 @@ void visualizeFibonacciModulo(int frame, int width, int height) {
     delete[] fib;
 }
 
+void visualizeWaveInterference(int frame, int width, int height) {
+    char intensityChars[] = {' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'};
+    std::string colors[] = {DIM + WHITE, WHITE, CYAN, BLUE, MAGENTA, RED};
+    
+    double source1x = width * 0.2;
+    double source2x = width * 0.8;
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double dx1 = x - source1x;
+            double dy1 = y - height / 2.0;
+            double dist1 = sqrt(dx1 * dx1 + dy1 * dy1) + 0.1;
+            
+            double dx2 = x - source2x;
+            double dy2 = y - height / 2.0;
+            double dist2 = sqrt(dx2 * dx2 + dy2 * dy2) + 0.1;
+            
+            double wave1 = sin(log(dist1) * 5 + frame * 0.3);
+            double wave2 = sin(log(dist2) * 5 + frame * 0.3);
+            double combined = (wave1 + wave2) / 2.0;
+            
+            int intensity = (int)((combined + 1) * 4.5);
+            if (intensity < 0) intensity = 0;
+            if (intensity > 9) intensity = 9;
+            
+            std::cout << colors[intensity * 5 / 10] << intensityChars[intensity];
+        }
+        if (y < height - 1) std::cout << RESET << "\n";
+    }
+    std::cout << RESET;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -176,6 +208,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizeSpiral);
     } else if (arg == "fibonacci") {
         runVisualization(visualizeFibonacciModulo);
+    } else if (arg == "wave") {
+        runVisualization(visualizeWaveInterference);
     } else {
         return 1;
     }
