@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <thread>
 #include <chrono>
+#include <ctime>
 
 const std::string RESET = "\033[0m";
 const std::string BOLD = "\033[1m";
@@ -20,6 +21,21 @@ const std::string CYAN = "\033[36m";
 const std::string WHITE = "\033[37m";
 
 const std::string BG_BLUE = "\033[44m";
+
+const char* DIGITS[10][9] = {
+    {"#########", "###   ###", "###   ###", "###   ###", "###   ###", "###   ###", "###   ###", "###   ###", "#########"},
+    {"    ###  ", "   ####  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "#########"},
+    {"#########", "      ###", "      ###", "#########", "###      ", "###      ", "###      ", "###      ", "#########"},
+    {"#########", "      ###", "      ###", "#########", "      ###", "      ###", "      ###", "      ###", "#########"},
+    {"###   ###", "###   ###", "###   ###", "#########", "      ###", "      ###", "      ###", "      ###", "      ###"},
+    {"#########", "###      ", "###      ", "#########", "      ###", "      ###", "      ###", "      ###", "#########"},
+    {"#########", "###      ", "###      ", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########"},
+    {"#########", "      ###", "     ### ", "    ###  ", "   ###   ", "  ###    ", " ###     ", "###      ", "###      "},
+    {"#########", "###   ###", "###   ###", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########"},
+    {"#########", "###   ###", "###   ###", "#########", "      ###", "      ###", "      ###", "      ###", "#########"}
+};
+
+const char* COLON[9] = {"         ", "   ###   ", "   ###   ", "   ###   ", "         ", "   ###   ", "   ###   ", "   ###   ", "         "};
 
 void getTerminalSize(int &width, int &height) {
     struct winsize w;
@@ -216,6 +232,80 @@ void visualizePlasma(int frame, int width, int height) {
     std::cout << RESET;
 }
 
+void visualizeClock(int frame, int width, int height) {
+    std::string colors[] = {RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA};
+    
+    time_t now = time(nullptr);
+    struct tm* t = localtime(&now);
+    int h = t->tm_hour;
+    int m = t->tm_min;
+    int s = t->tm_sec;
+    
+    int digitWidth = 9;
+    int digitHeight = 9;
+    int spacing = 1;
+    int colonWidth = 9;
+    int clockWidth = 6 * (digitWidth + spacing) + 2 * colonWidth;
+    int startX = (width - clockWidth) / 2;
+    int startY = (height - digitHeight) / 2;
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double dist = sqrt((x - width/2.0) * (x - width/2.0) + 
+                              (y - height/2.0) * (y - height/2.0));
+            double logDist = log(dist + 1);
+            int pattern = (int)(logDist * 2 + frame * 0.1 + s * 0.5) % 6;
+            
+            int relX = x - startX;
+            int relY = y - startY;
+            
+            bool inClockArea = (relY >= 0 && relY < digitHeight && relX >= 0 && relX < clockWidth);
+            
+            if (inClockArea) {
+                int pos = 0;
+                int digit = -1;
+                bool isColon = false;
+                int charInDigit = -1;
+                
+                if (relX < digitWidth) { digit = h / 10; charInDigit = relX; }
+                pos = digitWidth + spacing;
+                if (relX >= pos && relX < pos + digitWidth) { digit = h % 10; charInDigit = relX - pos; }
+                pos += digitWidth + spacing;
+                if (relX >= pos && relX < pos + colonWidth) { isColon = true; charInDigit = relX - pos; }
+                pos += colonWidth;
+                if (relX >= pos && relX < pos + digitWidth) { digit = m / 10; charInDigit = relX - pos; }
+                pos += digitWidth + spacing;
+                if (relX >= pos && relX < pos + digitWidth) { digit = m % 10; charInDigit = relX - pos; }
+                pos += digitWidth + spacing;
+                if (relX >= pos && relX < pos + colonWidth) { isColon = true; charInDigit = relX - pos; }
+                pos += colonWidth;
+                if (relX >= pos && relX < pos + digitWidth) { digit = s / 10; charInDigit = relX - pos; }
+                pos += digitWidth + spacing;
+                if (relX >= pos && relX < pos + digitWidth) { digit = s % 10; charInDigit = relX - pos; }
+                
+                char ch = ' ';
+                if (isColon && charInDigit >= 0 && charInDigit < colonWidth) {
+                    ch = COLON[relY][charInDigit];
+                } else if (digit >= 0 && charInDigit >= 0 && charInDigit < digitWidth) {
+                    ch = DIGITS[digit][relY][charInDigit];
+                }
+                
+                if (ch == '#') {
+                    std::cout << BOLD << WHITE << "#";
+                } else {
+                    std::cout << DIM << colors[pattern] << ".";
+                }
+            } else {
+                char bgChars[] = {' ', '.', ':', '+', '*'};
+                int charIdx = (int)(logDist + frame * 0.05) % 5;
+                std::cout << DIM << colors[pattern] << bgChars[charIdx];
+            }
+        }
+        if (y < height - 1) std::cout << RESET << "\n";
+    }
+    std::cout << RESET;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -263,6 +353,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizeMatrix);
     } else if (arg == "plasma") {
         runVisualization(visualizePlasma);
+    } else if (arg == "clock") {
+        runVisualization(visualizeClock);
     } else {
         return 1;
     }
