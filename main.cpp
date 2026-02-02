@@ -190,6 +190,32 @@ void visualizeMatrix(int frame, int width, int height) {
     std::cout << RESET;
 }
 
+void visualizePlasma(int frame, int width, int height) {
+    std::string colors[] = {RED, MAGENTA, BLUE, CYAN, GREEN, YELLOW};
+    char plasmaChars[] = {' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'};
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double v1 = sin(x * 0.1 + frame * 0.05);
+            double v2 = sin(y * 0.1 + frame * 0.03);
+            
+            double dx = x - width / 2.0;
+            double dy = y - height / 2.0;
+            double v3 = sin(log(sqrt(dx * dx + dy * dy) + 1) * 2 + frame * 0.04);
+            
+            double v4 = sin(log(((x * y) % 100) + 2) + frame * 0.06);
+            
+            double combined = (v1 + v2 + v3 + v4) / 4.0;
+            int colorIdx = (int)((combined + 1) * 3) % 6;
+            int charIdx = (int)((combined + 1) * 4.5) % 10;
+            
+            std::cout << colors[colorIdx] << plasmaChars[charIdx];
+        }
+        if (y < height - 1) std::cout << RESET << "\n";
+    }
+    std::cout << RESET;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -235,6 +261,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizeWaveInterference);
     } else if (arg == "matrix") {
         runVisualization(visualizeMatrix);
+    } else if (arg == "plasma") {
+        runVisualization(visualizePlasma);
     } else {
         return 1;
     }
