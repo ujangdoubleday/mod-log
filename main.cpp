@@ -167,6 +167,29 @@ void visualizeWaveInterference(int frame, int width, int height) {
     std::cout << RESET;
 }
 
+void visualizeMatrix(int frame, int width, int height) {
+    std::string greens[] = {DIM + GREEN, GREEN, BOLD + GREEN, BOLD + WHITE};
+    char matrixChars[] = {'0', '1', '@', '#', '$', '%', '&', '*', '=', '+'};
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double speed = log(((x * 7 + 13) % 17) + 2) * 2;
+            int dropPos = (int)(frame * speed + x * 31) % (height * 3);
+            int distFromHead = dropPos - y;
+            
+            if (distFromHead >= 0 && distFromHead < 15) {
+                int colorIdx = distFromHead % 4;
+                int charIdx = (x + y + frame) % 10;
+                std::cout << greens[3 - colorIdx] << matrixChars[charIdx];
+            } else {
+                std::cout << DIM << GREEN << ".";
+            }
+        }
+        if (y < height - 1) std::cout << RESET << "\n";
+    }
+    std::cout << RESET;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -210,6 +233,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizeFibonacciModulo);
     } else if (arg == "wave") {
         runVisualization(visualizeWaveInterference);
+    } else if (arg == "matrix") {
+        runVisualization(visualizeMatrix);
     } else {
         return 1;
     }
