@@ -306,6 +306,58 @@ void visualizeClock(int frame, int width, int height) {
     std::cout << RESET;
 }
 
+void visualizeRipplePond(int frame, int width, int height) {
+    char rippleChars[] = {' ', '~', '-', '=', '*', '#', '@', '%', '&', 'O'};
+    std::string colors[] = {DIM + BLUE, BLUE, CYAN, DIM + CYAN, WHITE, BOLD + CYAN};
+    
+    int numDroplets = 3;
+    double sources[3][2];
+    sources[0][0] = width * 0.3 + sin(frame * 0.02) * width * 0.1;
+    sources[0][1] = height * 0.4;
+    sources[1][0] = width * 0.7 + cos(frame * 0.015) * width * 0.1;
+    sources[1][1] = height * 0.6;
+    sources[2][0] = width * 0.5;
+    sources[2][1] = height * 0.5 + sin(frame * 0.025) * height * 0.2;
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double totalWave = 0;
+            
+            for (int d = 0; d < numDroplets; d++) {
+                double dx = x - sources[d][0];
+                double dy = (y - sources[d][1]) * 2;
+                double dist = sqrt(dx * dx + dy * dy);
+                
+                double logDist = log(dist + 1);
+                
+                double freq = 0.5 + (d % 3) * 0.2;
+                double phase = frame * 0.15 * (1 + (d % 2) * 0.3);
+                
+                double amplitude = 1.0 / (logDist + 1);
+                double wave = sin(logDist * 3.0 * freq - phase) * amplitude;
+                
+                totalWave += wave;
+            }
+            
+            int intensity = (int)((totalWave + 1.5) * 3.0);
+            if (intensity < 0) intensity = 0;
+            if (intensity > 9) intensity = 9;
+            
+            int colorIdx = ((int)(log(fabs(totalWave) * 10 + 1) * 2) + frame / 10) % 6;
+            
+            bool shimmer = ((x + y + frame) % 17 == 0) && intensity > 5;
+            
+            if (shimmer) {
+                std::cout << BOLD << WHITE << "*";
+            } else {
+                std::cout << colors[colorIdx] << rippleChars[intensity];
+            }
+        }
+        if (y < height - 1) std::cout << RESET << "\n";
+    }
+    std::cout << RESET;
+}
+
 void runVisualization(void (*vizFunc)(int, int, int)) {
     enterAltScreen();
     hideCursor();
@@ -355,6 +407,8 @@ int main(int argc, char* argv[]) {
         runVisualization(visualizePlasma);
     } else if (arg == "clock") {
         runVisualization(visualizeClock);
+    } else if (arg == "ripple") {
+        runVisualization(visualizeRipplePond);
     } else {
         return 1;
     }
